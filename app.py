@@ -1,15 +1,13 @@
 from flask import Flask, request
 import os
 import requests
+import urllib.parse
 from datetime import datetime
 
 app = Flask(__name__)
 
 BOT_TOKEN = os.getenv("BOT_TOKEN")
-HF_TOKEN = os.getenv("HF_API_KEY")
 WEBHOOK_URL = os.getenv("WEBHOOK_URL")
-
-HF_API_URL = "https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-2-1"
 
 user_styles = {}
 user_history = {}
@@ -32,15 +30,11 @@ def send_photo(chat_id, image_bytes, caption=""):
 def generate_thumbnail(prompt, style="default"):
     style_prompt = STYLES.get(style, STYLES["default"])
     full_prompt = f"{prompt}, {style_prompt}"
-    headers = {"Authorization": f"Bearer {HF_TOKEN}"}
-    payload = {
-        "inputs": full_prompt,
-        "options": {"wait_for_model": True}
-    }
+    encoded = urllib.parse.quote(full_prompt)
+    url = f"https://image.pollinations.ai/prompt/{encoded}?width=1280&height=720&nologo=true"
     try:
-        response = requests.post(HF_API_URL, headers=headers, json=payload, timeout=120)
-        print(f"HF Status: {response.status_code}")
-        print(f"HF Response: {response.text[:200]}")
+        response = requests.get(url, timeout=60)
+        print(f"Pollinations Status: {response.status_code}")
         if response.status_code == 200:
             return response.content
         return None
@@ -93,7 +87,7 @@ Example: /thumbnail AI ka future"""
         else:
             title = parts[1]
             style = user_styles.get(chat_id, "default")
-            send_message(chat_id, f"⏳ Thumbnail ban raha hai... ({style} style)\n\nThoda wait karo ~1 min ⏱")
+            send_message(chat_id, f"⏳ Thumbnail ban raha hai... ({style} style)\n\nThoda wait karo ~30 sec ⏱")
             image = generate_thumbnail(title, style)
             if image:
                 if chat_id not in user_history:
@@ -105,7 +99,7 @@ Example: /thumbnail AI ka future"""
                 })
                 send_photo(chat_id, image, f"🎨 {title} ({style} style)")
             else:
-                send_message(chat_id, "❌ Model load ho raha hai, 2 minute baad try karo!")
+                send_message(chat_id, "❌ Error aaya, dobara try karo!")
 
     elif text == "/history":
         history = user_history.get(chat_id, [])
