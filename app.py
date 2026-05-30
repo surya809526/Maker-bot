@@ -15,12 +15,12 @@ user_styles = {}
 user_history = {}
 
 STYLES = {
-    "tech": "dark blue black background, glowing neon blue circuit boards, terminal screen with code, dramatic lighting, 4K, photorealistic, no text no words no letters",
-    "horror": "dark horror background, scary atmosphere, blood red elements, dramatic shadows, 4K, photorealistic, no text no words no letters",
-    "gaming": "gaming setup background, colorful RGB lights, dark room, gaming chair, 4K, photorealistic, no text no words no letters",
-    "youtube": "dramatic YouTube thumbnail background, dark moody lighting, glowing elements, professional studio, 4K, no text no words no letters",
-    "gemini": "dark blue background, Google Gemini glowing diamond shape, terminal code screen green text, Telegram blue logo, tech elements, 4K, no text no words no letters",
-    "default": "professional YouTube thumbnail background, dramatic lighting, vibrant colors, 4K ultra HD, no text no words no letters"
+    "tech": "shocked young indian man face expression, dark blue black background, glowing neon blue circuit boards, terminal screen, dramatic lighting, 4K photorealistic",
+    "horror": "scared young man face expression, dark horror background, blood red elements, dramatic shadows, 4K photorealistic",
+    "gaming": "excited young gamer face expression, gaming setup background, colorful RGB lights, dark room, 4K photorealistic",
+    "youtube": "shocked excited young indian man face, dramatic YouTube thumbnail background, dark moody lighting, glowing elements, 4K",
+    "gemini": "excited young indian man pointing at screen, dark blue background, Google Gemini glowing diamond, terminal code screen, Telegram logo, 4K",
+    "default": "shocked excited young indian man face expression, dramatic background, vibrant colors, 4K ultra HD"
 }
 
 def send_message(chat_id, text):
@@ -54,28 +54,29 @@ def add_text_overlay(image_bytes, title):
     # Dark gradient overlay neeche
     overlay = Image.new("RGBA", (1280, 720), (0, 0, 0, 0))
     draw_overlay = ImageDraw.Draw(overlay)
-    for i in range(300):
-        alpha = int(200 * (i / 300))
-        draw_overlay.rectangle([(0, 420 + i), (1280, 421 + i)], fill=(0, 0, 0, alpha))
+    for i in range(350):
+        alpha = int(220 * (i / 350))
+        draw_overlay.rectangle([(0, 370 + i), (1280, 371 + i)], fill=(0, 0, 0, alpha))
     img = Image.alpha_composite(img, overlay)
 
     draw = ImageDraw.Draw(img)
 
     try:
-        font_large = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 85)
-        font_medium = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 65)
-        font_small = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 50)
+        font_large = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 90)
+        font_medium = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 70)
+        font_small = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 55)
     except:
         font_large = ImageFont.load_default()
         font_medium = font_large
         font_small = font_large
 
     title_upper = title.upper()
+    words = title_upper.split()
 
-    # Font size decide karo text length ke hisab se
-    if len(title_upper) < 20:
+    # Font size decide karo
+    if len(title_upper) < 15:
         font = font_large
-    elif len(title_upper) < 35:
+    elif len(title_upper) < 30:
         font = font_medium
     else:
         font = font_small
@@ -83,21 +84,29 @@ def add_text_overlay(image_bytes, title):
     lines = wrap_text(draw, title_upper, font, 1220)
     lines = lines[:3]
 
-    total_height = len(lines) * 90
-    y = 720 - total_height - 30
+    # Colors - har line alag color
+    colors = [
+        (255, 215, 0, 255),    # Yellow
+        (0, 200, 255, 255),    # Blue
+        (0, 255, 100, 255),    # Green
+    ]
 
-    for line in lines:
+    total_height = len(lines) * 95
+    y = 720 - total_height - 25
+
+    for i, line in enumerate(lines):
         bbox = draw.textbbox((0, 0), line, font=font)
         text_width = bbox[2] - bbox[0]
         x = (1280 - text_width) // 2
 
         # Black shadow
-        for dx, dy in [(-3, -3), (3, -3), (-3, 3), (3, 3), (0, 4), (4, 0)]:
+        for dx, dy in [(-4, -4), (4, -4), (-4, 4), (4, 4), (0, 5), (5, 0), (-5, 0), (0, -5)]:
             draw.text((x + dx, y + dy), line, font=font, fill=(0, 0, 0, 255))
 
-        # Yellow text
-        draw.text((x, y), line, font=font, fill=(255, 215, 0, 255))
-        y += 90
+        # Colored text
+        color = colors[i % len(colors)]
+        draw.text((x, y), line, font=font, fill=color)
+        y += 95
 
     final = img.convert("RGB")
     output = io.BytesIO()
@@ -106,7 +115,7 @@ def add_text_overlay(image_bytes, title):
 
 def generate_thumbnail(prompt, style="default"):
     style_prompt = STYLES.get(style, STYLES["default"])
-    full_prompt = f"{prompt}, {style_prompt}"
+    full_prompt = f"{prompt} thumbnail background, {style_prompt}"
     encoded = urllib.parse.quote(full_prompt)
     url = f"https://image.pollinations.ai/prompt/{encoded}?width=1280&height=720&nologo=true"
     try:
@@ -144,7 +153,7 @@ Commands:
 /history - Purane thumbnails dekho
 
 Example:
-/style tech
+/style gemini
 /thumbnail I Built My Own AI Bot"""
         send_message(chat_id, msg)
 
