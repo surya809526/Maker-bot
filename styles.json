@@ -1,0 +1,14 @@
+{
+  "tech": {
+    "prompt": "futuristic technology youtube thumbnail, neon glow, cyber style"
+  },
+  "gaming": {
+    "prompt": "epic gaming thumbnail, action, vibrant colors"
+  },
+  "horror": {
+    "prompt": "dark horror thumbnail, scary atmosphere, cinematic"
+  },
+  "cinematic": {
+    "prompt": "movie poster style, cinematic lighting, dramatic"
+  }
+}
