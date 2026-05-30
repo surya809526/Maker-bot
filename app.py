@@ -3,69 +3,71 @@ import logging
 from flask import Flask, request
 from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, ContextTypes, filters
+import asyncio
 
-# ---------------- LOGGING ----------------
-logging.basicConfig(
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    level=logging.INFO
-)
+logging.basicConfig(level=logging.INFO)
 
-# ---------------- CONFIG ----------------
-BOT_TOKEN = os.getenv("BOT_TOKEN")  # Render/Env me set karna
-APP_URL = os.getenv("APP_URL")      # https://your-app.onrender.com
+BOT_TOKEN = os.getenv("BOT_TOKEN")
+APP_URL = os.getenv("APP_URL")
 
 if not BOT_TOKEN:
-    raise ValueError("BOT_TOKEN missing in environment variables")
+    raise Exception("BOT_TOKEN missing")
 
-# ---------------- FLASK APP ----------------
 app = Flask(__name__)
 
-# ---------------- TELEGRAM APP ----------------
+# Telegram app
 tg_app = Application.builder().token(BOT_TOKEN).build()
+
 
 # ---------------- HANDLERS ----------------
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("👋 Bot started successfully!")
-
-async def help_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("Send any message and I will reply back.")
+    await update.message.reply_text("👋 Thumbnail Bot Ready!\nSend text for thumbnail idea.")
 
 async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = update.message.text
-    await update.message.reply_text(f"📩 You said: {text}")
 
-# Add handlers
+    # Thumbnail prompt generator
+    prompt = f"""
+🎨 Thumbnail Idea:
+- Text: {text}
+- Style: cinematic, high contrast, viral YouTube thumbnail
+- Elements: dramatic background, bold text, glowing effect
+"""
+
+    await update.message.reply_text(prompt)
+
+
 tg_app.add_handler(CommandHandler("start", start))
-tg_app.add_handler(CommandHandler("help", help_cmd))
 tg_app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, echo))
 
 
-# ---------------- FLASK ROUTES ----------------
+# ---------------- FLASK ----------------
 @app.route("/")
 def home():
-    return "🤖 Bot is running!"
+    return "Bot Running OK"
+
 
 @app.route("/webhook", methods=["POST"])
-async def webhook():
-    try:
-        data = request.get_json(force=True)
-        update = Update.de_json(data, tg_app.bot)
-        await tg_app.process_update(update)
-        return "ok"
-    except Exception as e:
-        logging.error(f"Webhook error: {e}")
-        return "error", 500
+def webhook():
+    data = request.get_json(force=True)
+
+    update = Update.de_json(data, tg_app.bot)
+
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    loop.run_until_complete(tg_app.process_update(update))
+
+    return "ok"
 
 
-# ---------------- SET WEBHOOK ----------------
 @app.route("/setwebhook")
 def set_webhook():
     url = f"{APP_URL}/webhook"
-    result = tg_app.bot.set_webhook(url=url)
-    return f"Webhook set to {url} => {result}"
+    tg_app.bot.set_webhook(url=url)
+    return f"Webhook set: {url}"
 
 
-# ---------------- MAIN ----------------
+# ---------------- RUN ----------------
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
