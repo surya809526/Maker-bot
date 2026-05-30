@@ -1,54 +1,38 @@
+from flask import Flask
 import os
-import requests
-from flask import Flask, request
-
-# Telegram Bot Token
-TOKEN = os.getenv("BOT_TOKEN", "")
-
-# Hugging Face API Key
-HF_API_KEY = os.getenv("HF_API_KEY", "")
-
-# Render URL
-WEBHOOK_URL = "https://maker-bot-x9ob.onrender.com"
 
 app = Flask(__name__)
 
-def translate_hindi_to_english(text):
-    try:
-        api_url = (
-            "https://translate.googleapis.com/translate_a/single"
-            f"?client=gtx&sl=auto&tl=en&dt=t&q={requests.utils.quote(text)}"
-        )
+BOT_TOKEN = os.getenv("BOT_TOKEN")
+HF_API_KEY = os.getenv("HF_API_KEY")
 
-        response = requests.get(api_url, timeout=10)
+@app.route("/")
+def home():
 
-        if response.status_code == 200:
-            result = response.json()
-            return "".join([x[0] for x in result[0]])
+    return f"""
+    <h2>Render Environment Test</h2>
 
-    except Exception as e:
-        print("Translation Error:", e)
+    BOT_TOKEN Found:
+    {BOT_TOKEN is not None}
 
-    return text
+    <br><br>
 
-@app.route("/", methods=["GET", "POST", "HEAD"])
-def index():
+    HF_API_KEY Found:
+    {HF_API_KEY is not None}
 
-    if request.method == "HEAD":
-        return "OK", 200
+    <br><br>
 
-    if request.method == "GET":
+    BOT_TOKEN Length:
+    {len(BOT_TOKEN) if BOT_TOKEN else 0}
 
-        if not TOKEN:
-            return "<h1>BOT_TOKEN missing on Render</h1>", 500
+    <br><br>
 
-        telegram_url = f"https://api.telegram.org/bot{TOKEN}/setWebhook"
+    HF_API_KEY Length:
+    {len(HF_API_KEY) if HF_API_KEY else 0}
+    """
 
-        response = requests.get(
-            telegram_url,
-            params={"url": WEBHOOK_URL}
-        )
-
-        return f"Bot Running<br>{response.text}", 200
-
-    return "OK", 200
+if __name__ == "__main__":
+    app.run(
+        host="0.0.0.0",
+        port=int(os.environ.get("PORT", 10000))
+    )
