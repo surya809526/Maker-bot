@@ -1,13 +1,12 @@
 from flask import Flask, request
 import os
 import requests
-import json
 from datetime import datetime
 
 app = Flask(__name__)
 
 BOT_TOKEN = os.getenv("BOT_TOKEN")
-HF_TOKEN = os.getenv("HF_TOKEN")
+HF_TOKEN = os.getenv("HF_API_KEY")
 WEBHOOK_URL = os.getenv("WEBHOOK_URL")
 
 HF_API_URL = "https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-2-1"
@@ -17,7 +16,7 @@ user_history = {}
 
 STYLES = {
     "tech": "futuristic technology style, blue neon lights, circuit boards, 4K, ultra HD, YouTube thumbnail",
-    "horror": "dark horror style, scary, blood red, dark atmosphere, 4K, ultra HD, YouTube thumbnail", 
+    "horror": "dark horror style, scary, blood red, dark atmosphere, 4K, ultra HD, YouTube thumbnail",
     "gaming": "gaming style, colorful, action packed, RGB lights, 4K, ultra HD, YouTube thumbnail",
     "default": "professional YouTube thumbnail, vibrant colors, 4K, ultra HD, eye catching"
 }
@@ -33,12 +32,9 @@ def send_photo(chat_id, image_bytes, caption=""):
 def generate_thumbnail(prompt, style="default"):
     style_prompt = STYLES.get(style, STYLES["default"])
     full_prompt = f"{prompt}, {style_prompt}"
-    
     headers = {"Authorization": f"Bearer {HF_TOKEN}"}
     payload = {"inputs": full_prompt}
-    
-    response = requests.post(HF_API_URL, headers=headers, json=payload)
-    
+    response = requests.post(HF_API_URL, headers=headers, json=payload, timeout=60)
     if response.status_code == 200:
         return response.content
     return None
@@ -50,20 +46,19 @@ def home():
 @app.route("/webhook", methods=["POST"])
 def webhook():
     data = request.get_json()
-    
     if "message" not in data:
         return "OK"
-    
+
     chat_id = data["message"]["chat"]["id"]
     text = data["message"].get("text", "")
-    
+
     if text == "/start":
         msg = """🎨 <b>YouTube Thumbnail Generator Bot</b>
 
 Commands:
 /thumbnail [title] - Thumbnail banao
 /style tech - Tech style
-/style horror - Horror style  
+/style horror - Horror style
 /style gaming - Gaming style
 /history - Purane thumbnails dekho
 
@@ -90,9 +85,7 @@ Example: /thumbnail AI ka future"""
             title = parts[1]
             style = user_styles.get(chat_id, "default")
             send_message(chat_id, f"⏳ Thumbnail ban raha hai... ({style} style)")
-            
             image = generate_thumbnail(title, style)
-            
             if image:
                 if chat_id not in user_history:
                     user_history[chat_id] = []
@@ -103,7 +96,7 @@ Example: /thumbnail AI ka future"""
                 })
                 send_photo(chat_id, image, f"🎨 {title} ({style} style)")
             else:
-                send_message(chat_id, "❌ Error! Model load ho raha hai, 1 minute baad try karo")
+                send_message(chat_id, "❌ Model load ho raha hai, 1 minute baad try karo!")
 
     elif text == "/history":
         history = user_history.get(chat_id, [])
@@ -117,7 +110,7 @@ Example: /thumbnail AI ka future"""
 
     else:
         send_message(chat_id, "Commands ke liye /start likho")
-    
+
     return "OK"
 
 @app.route("/set_webhook", methods=["GET"])
