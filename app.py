@@ -2,24 +2,39 @@ from flask import Flask, request
 import os
 import requests
 
-app = Flask(__name__)
+app = Flask(name)
 
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 
 @app.route("/", methods=["GET", "POST"])
 def webhook():
 
-    if request.method == "GET":
-        return "Bot Running"
+if request.method == "GET":
+    return "Bot Running"
 
-    data = request.get_json()
+data = request.get_json()
 
-    print(data)
+try:
+    if data and "message" in data:
 
-    return "OK"
+        chat_id = data["message"]["chat"]["id"]
 
-if __name__ == "__main__":
-    app.run(
-        host="0.0.0.0",
-        port=int(os.environ.get("PORT", 10000))
+        requests.post(
+            f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage",
+            json={
+                "chat_id": chat_id,
+                "text": "✅ Bot Working!"
+            },
+            timeout=10
+        )
+
+except Exception as e:
+    print("ERROR:", e)
+
+return "OK"
+
+if name == "main":
+app.run(
+host="0.0.0.0",
+port=int(os.environ.get("PORT", 10000))
     )
