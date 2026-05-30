@@ -1,21 +1,25 @@
 from flask import Flask, request
 import os
+import requests
 
-app = Flask(name)
+app = Flask(__name__)
+
+BOT_TOKEN = os.getenv("BOT_TOKEN")
 
 @app.route("/", methods=["GET", "POST"])
 def webhook():
 
-if request.method == "GET":
-    return "Bot Running"
+    if request.method == "GET":
+        return "Bot Running"
 
-print("POST RECEIVED")
-print(request.get_json())
+    data = request.get_json()
 
-return "OK"
+    print(data)
 
-if name == "main":
-app.run(
-host="0.0.0.0",
-port=int(os.environ.get("PORT", 10000))
-)
+    return "OK"
+
+if __name__ == "__main__":
+    app.run(
+        host="0.0.0.0",
+        port=int(os.environ.get("PORT", 10000))
+    )
