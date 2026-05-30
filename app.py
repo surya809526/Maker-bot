@@ -33,11 +33,20 @@ def generate_thumbnail(prompt, style="default"):
     style_prompt = STYLES.get(style, STYLES["default"])
     full_prompt = f"{prompt}, {style_prompt}"
     headers = {"Authorization": f"Bearer {HF_TOKEN}"}
-    payload = {"inputs": full_prompt}
-    response = requests.post(HF_API_URL, headers=headers, json=payload, timeout=60)
-    if response.status_code == 200:
-        return response.content
-    return None
+    payload = {
+        "inputs": full_prompt,
+        "options": {"wait_for_model": True}
+    }
+    try:
+        response = requests.post(HF_API_URL, headers=headers, json=payload, timeout=120)
+        print(f"HF Status: {response.status_code}")
+        print(f"HF Response: {response.text[:200]}")
+        if response.status_code == 200:
+            return response.content
+        return None
+    except Exception as e:
+        print(f"Error: {e}")
+        return None
 
 @app.route("/", methods=["GET"])
 def home():
@@ -84,7 +93,7 @@ Example: /thumbnail AI ka future"""
         else:
             title = parts[1]
             style = user_styles.get(chat_id, "default")
-            send_message(chat_id, f"⏳ Thumbnail ban raha hai... ({style} style)")
+            send_message(chat_id, f"⏳ Thumbnail ban raha hai... ({style} style)\n\nThoda wait karo ~1 min ⏱")
             image = generate_thumbnail(title, style)
             if image:
                 if chat_id not in user_history:
@@ -96,7 +105,7 @@ Example: /thumbnail AI ka future"""
                 })
                 send_photo(chat_id, image, f"🎨 {title} ({style} style)")
             else:
-                send_message(chat_id, "❌ Model load ho raha hai, 1 minute baad try karo!")
+                send_message(chat_id, "❌ Model load ho raha hai, 2 minute baad try karo!")
 
     elif text == "/history":
         history = user_history.get(chat_id, [])
